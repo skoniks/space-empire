@@ -1,6 +1,6 @@
 {
   "name": "space-empire",
-  "main": "dist/index",
+  "main": "dist/main",
   "scripts": {
     "start": "node .",
     "clean": "rimraf dist",
@@ -12,10 +12,15 @@
     "lint": "eslint \"src/**/*.ts\" --fix"
   },
   "dependencies": {
-    "dotenv": "^16.0.3"
+    "dotenv": "^16.0.3",
+    "mysql2": "^3.0.1",
+    "reflect-metadata": "^0.1.13",
+    "sequelize": "^6.28.0",
+    "sequelize-typescript": "^2.1.5"
   },
   "devDependencies": {
     "@types/node": "^18.11.18",
+    "@types/validator": "^13.7.11",
     "@typescript-eslint/eslint-plugin": "^5.49.0",
     "@typescript-eslint/parser": "^5.49.0",
     "eslint": "^8.32.0",

@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'spacebot',
-      script: 'dist/index.js',
+      script: 'dist/main.js',
     },
   ],
 };
