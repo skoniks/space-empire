@@ -1,3 +1,4 @@
+import { resolve } from 'path';
 import { Sequelize } from 'sequelize-typescript';
 
 const DB = new Sequelize({
@@ -9,9 +10,9 @@ const DB = new Sequelize({
   database: process.env.DB_BASE,
   timezone: process.env.TZ_OFFSET,
   dialectOptions: { decimalNumbers: true },
-  models: [],
+  models: [resolve(__dirname, 'entities')],
   benchmark: true,
-  logging: true,
+  // logging: false,
   // pool: {},
 });
 
