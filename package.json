@@ -1,0 +1,29 @@
+{
+  "name": "space-empire",
+  "main": "dist/index",
+  "scripts": {
+    "start": "node .",
+    "clean": "rimraf dist",
+    "build": "tsc --build --verbose",
+    "start:dev": "npm run clean && npm run build && npm start",
+    "start:watch": "tsc-watch --onSuccess \"npm run start\"",
+    "test": "npm run build && node dist/test",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "eslint \"src/**/*.ts\" --fix"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.18",
+    "@typescript-eslint/eslint-plugin": "^5.49.0",
+    "@typescript-eslint/parser": "^5.49.0",
+    "eslint": "^8.32.0",
+    "eslint-config-prettier": "^8.6.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "prettier": "^2.8.3",
+    "rimraf": "^4.1.2",
+    "tsc-watch": "^6.0.0",
+    "typescript": "^4.9.4"
+  }
+}

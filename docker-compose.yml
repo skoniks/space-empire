@@ -1,0 +1,33 @@
+services:
+  mysql:
+    image: mysql:latest
+    command: --max_connections=10000
+    environment:
+      MYSQL_DATABASE: "${DB_BASE}"
+      MYSQL_ROOT_PASSWORD: "${DB_PASS}"
+    cap_add:
+      - SYS_NICE # CAP_SYS_NICE
+    volumes:
+      - mysql:/var/lib/mysql
+    ports:
+      - 3306:3306
+  # phpmyadmin:
+  #   image: phpmyadmin:latest
+  #   ports:
+  #     - 8080:80
+  #   depends_on:
+  #     - mysql
+  #   environment:
+  #     PMA_HOST: "mysql"
+  #     PMA_PORT: "3306"
+  #     PMA_USER: "root"
+  #     PMA_PASSWORD: "${DB_PASS}"
+  adminer:
+    image: adminer
+    ports:
+      - 8080:8080
+    depends_on:
+      - mysql
+volumes:
+  mysql: null
+  redis: null
