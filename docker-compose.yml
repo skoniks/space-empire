@@ -11,23 +11,14 @@ services:
       - mysql:/var/lib/mysql
     ports:
       - 3306:3306
-  # phpmyadmin:
-  #   image: phpmyadmin:latest
-  #   ports:
-  #     - 8080:80
-  #   depends_on:
-  #     - mysql
-  #   environment:
-  #     PMA_HOST: "mysql"
-  #     PMA_PORT: "3306"
-  #     PMA_USER: "root"
-  #     PMA_PASSWORD: "${DB_PASS}"
   adminer:
     image: adminer
     ports:
       - 8080:8080
     depends_on:
       - mysql
+    environment:
+      ADMINER_DEFAULT_SERVER: "mysql"
 volumes:
   mysql: null
   redis: null
