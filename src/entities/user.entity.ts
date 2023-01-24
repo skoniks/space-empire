@@ -20,11 +20,15 @@ class User extends Entity<User> {
   declare id: CreationOptional<number>;
 
   @Unique
-  @Column({ type: DataType.STRING })
-  declare chat: string;
+  @Column({ type: DataType.INTEGER })
+  declare chat: number;
 
   @Column({ type: DataType.STRING })
   declare name: string;
+
+  @Default(1)
+  @Column({ type: DataType.INTEGER })
+  declare level: CreationOptional<number>;
 
   @Default(0)
   @Column({ type: DataType.INTEGER })

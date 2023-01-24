@@ -11,7 +11,7 @@ const commands: TelegramBotCommand[] = [
 
 async function bootstrap() {
   await DB.authenticate();
-  await DB.sync({ force: true });
+  await DB.sync({ force: false });
   await BOT.api.setMyCommands({ commands });
   await BOT.updates.startPolling();
 }
