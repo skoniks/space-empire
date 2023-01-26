@@ -10,7 +10,7 @@ const DB = new Sequelize({
   database: process.env.DB_BASE,
   timezone: process.env.TZ_OFFSET,
   dialectOptions: { decimalNumbers: true },
-  models: [resolve(__dirname, 'entities')],
+  models: [resolve(__dirname, '..', 'entities')],
   benchmark: true,
   // logging: false,
   // pool: {},

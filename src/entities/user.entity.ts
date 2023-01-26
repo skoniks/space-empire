@@ -10,7 +10,7 @@ import {
   Unique,
   UpdatedAt,
 } from 'sequelize-typescript';
-import { Column, Entity } from '../db.types';
+import { Column, Entity } from '../database/db.types';
 
 @Table({ tableName: 'users' })
 class User extends Entity<User> {
@@ -26,6 +26,9 @@ class User extends Entity<User> {
   @Column({ type: DataType.STRING })
   declare name: string;
 
+  // @NullColumn({})
+  // declare action: CreationOptional<>
+
   @Default(1)
   @Column({ type: DataType.INTEGER })
   declare level: CreationOptional<number>;
@@ -33,10 +36,6 @@ class User extends Entity<User> {
   @Default(0)
   @Column({ type: DataType.INTEGER })
   declare money: CreationOptional<number>;
-
-  @Default(0)
-  @Column({ type: DataType.INTEGER })
-  declare power: CreationOptional<number>;
 
   @Default(0)
   @Column({ type: DataType.INTEGER })

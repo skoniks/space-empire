@@ -2,8 +2,8 @@ import 'dotenv/config';
 import 'reflect-metadata';
 
 import { TelegramBotCommand } from 'puregram/generated';
-import BOT from './bot.module';
-import DB from './db.module';
+import BOT from './telegram/tg.module';
+import DB from './database/db.module';
 
 const commands: TelegramBotCommand[] = [
   { command: '/start', description: 'Запуск бота' },

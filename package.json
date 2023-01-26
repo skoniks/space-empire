@@ -12,8 +12,6 @@
     "lint": "eslint \"src/**/*.ts\" --fix"
   },
   "dependencies": {
-    "@puregram/prompt": "^1.2.0",
-    "@puregram/session": "^2.0.1-rc.1",
     "dotenv": "^16.0.3",
     "mysql2": "^3.0.1",
     "puregram": "^2.9.8",
