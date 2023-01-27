@@ -4,7 +4,8 @@ import DB from '../database/db.module';
 import { ActionType } from '../entities/action.entity';
 import Colony from '../entities/colony.entity';
 import { authorize } from './auth.service';
-import { colonyMenu, mainMenu } from './menu.service';
+import { colonyMenu, colonyProfit } from './colony.service';
+import { mainMenu } from './main.service';
 
 async function handleAction(
   colony: Colony,
@@ -22,6 +23,9 @@ async function handleAction(
       break;
     case ActionType.colony:
       await colonyMenu(colony);
+      break;
+    case ActionType.profit:
+      await colonyProfit(colony, transaction);
       break;
     case ActionType.military:
       break;

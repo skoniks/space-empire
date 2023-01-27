@@ -4,7 +4,6 @@ import {
   CreatedAt,
   DataType,
   Default,
-  DeletedAt,
   HasMany,
   HasOne,
   PrimaryKey,
@@ -57,9 +56,6 @@ class Colony extends Entity<Colony> {
 
   @UpdatedAt
   declare updatedAt: CreationOptional<Date>;
-
-  @DeletedAt
-  declare deletedAt: CreationOptional<Date>;
 
   power(): number {
     const value = 100 * 1.5 ** (this.level - 1);

@@ -4,7 +4,6 @@ import {
   BelongsTo,
   CreatedAt,
   DataType,
-  DeletedAt,
   ForeignKey,
   PrimaryKey,
   Table,
@@ -17,6 +16,7 @@ export enum ActionType {
   back,
   fresh,
   colony,
+  profit,
   military,
   trade,
   help,
@@ -47,9 +47,6 @@ class Action extends Entity<Action> {
 
   @UpdatedAt
   declare updatedAt: CreationOptional<Date>;
-
-  @DeletedAt
-  declare deletedAt: CreationOptional<Date>;
 }
 
 export default Action;

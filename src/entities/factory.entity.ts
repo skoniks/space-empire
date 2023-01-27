@@ -4,13 +4,12 @@ import {
   BelongsTo,
   CreatedAt,
   DataType,
-  DeletedAt,
   ForeignKey,
   PrimaryKey,
   Table,
   UpdatedAt,
 } from 'sequelize-typescript';
-import { Column, Entity, NullColumn } from '../database/db.types';
+import { Column, Entity } from '../database/db.types';
 import Colony from './colony.entity';
 
 export enum FactoryType {
@@ -25,7 +24,7 @@ class Factory extends Entity<Factory> {
   @Column({ type: DataType.INTEGER })
   declare id: CreationOptional<number>;
 
-  @NullColumn({ type: DataType.INTEGER })
+  @Column({ type: DataType.INTEGER })
   declare type: FactoryType;
 
   @Column({ type: DataType.INTEGER })
@@ -47,8 +46,10 @@ class Factory extends Entity<Factory> {
   @UpdatedAt
   declare updatedAt: CreationOptional<Date>;
 
-  @DeletedAt
-  declare deletedAt: CreationOptional<Date>;
+  profit(): number {
+    const time = Date.now() - this.updatedAt.valueOf();
+    return ((time / (60 * 1000)) | 0) * this.level;
+  }
 }
 
 export default Factory;
