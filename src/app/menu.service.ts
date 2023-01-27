@@ -1,69 +1,83 @@
-import { HTML, InlineKeyboard } from 'puregram';
-import User, { Action } from '../entities/user.entity';
+import { APIError, HTML, InlineKeyboard } from 'puregram';
+import { ActionType } from '../entities/action.entity';
+import Colony from '../entities/colony.entity';
 import TG from '../telegram/tg.module';
 
-export async function mainMenu(user: User) {
+async function drawMenu(
+  colony: Colony,
+  text: string,
+  keyboard: InlineKeyboard,
+) {
+  try {
+    await TG.api.editMessageText({
+      text,
+      chat_id: colony.chat,
+      message_id: colony.action.message,
+      reply_markup: keyboard,
+      parse_mode: 'HTML',
+    });
+  } catch (error) {
+    if (
+      error instanceof APIError &&
+      error.message.includes('message to edit not found')
+    ) {
+      const { message_id } = await TG.api.sendMessage({
+        text,
+        chat_id: colony.chat,
+        reply_markup: keyboard,
+        parse_mode: 'HTML',
+      });
+      colony.action.message = message_id;
+    }
+  }
+}
+
+export async function mainMenu(colony: Colony) {
   const text = [
-    `🚩 Колония: ${HTML.bold(user.name)}`,
+    `🚩 Колония: ${HTML.bold(colony.name)}`,
     '',
-    `💸 Кредиты: ${HTML.bold(`${user.money}`)}`,
-    `💎 Минералы: ${HTML.bold(`${user.iron}`)}`,
-    `🍖 Провизия: ${HTML.bold(`${user.food}`)}`,
+    `💸 Кредиты: ${HTML.bold(`${colony.money}`)}`,
+    `💎 Минералы: ${HTML.bold(`${colony.iron}`)}`,
+    `🍖 Провизия: ${HTML.bold(`${colony.food}`)}`,
   ].join('\n');
   const keyboard = InlineKeyboard.keyboard([
     [
       InlineKeyboard.textButton({
         text: '🏭 База',
-        payload: { action: Action.colony },
+        payload: { action: ActionType.colony },
       }),
       InlineKeyboard.textButton({
         text: '⚔️ Армия',
-        payload: { action: Action.military },
+        payload: { action: ActionType.military },
       }),
     ],
     [
       InlineKeyboard.textButton({
         text: '⚖️ Биржа',
-        payload: { action: Action.trade },
+        payload: { action: ActionType.trade },
       }),
       InlineKeyboard.textButton({
         text: '📔 Справка',
-        payload: { action: Action.help },
+        payload: { action: ActionType.help },
       }),
     ],
     [
       InlineKeyboard.textButton({
         text: '🔄 Обновить',
-        payload: { action: Action.fresh },
+        payload: { action: ActionType.fresh },
       }),
     ],
   ]);
-  const res = await TG.api.sendMessage({
-    text,
-    chat_id: user.chat,
-    reply_markup: keyboard,
-    parse_mode: 'HTML',
-  });
-  if (user.last) {
-    await TG.api
-      .deleteMessage({
-        chat_id: user.chat,
-        message_id: user.last,
-      })
-      .catch();
-  }
-  user.last = res.message_id;
-  user.action = null;
+
+  await drawMenu(colony, text, keyboard);
+  if (colony.action) colony.action.type = null;
 }
 
-export async function colonyMenu(user: User) {
-  // function getPower(level = 1) {
-  //   const power = 100 * 1.5 ** (level - 1);
-  //   return power - (power % 5);
-  // }
-  const power = 100;
+export async function colonyMenu(colony: Colony) {
   const text = [
-    `🏭 База [${HTML.bold(` ʟᴠʟ ${user.level} `)}] ( 10 / ${power}⚡️)`,
+    `🏭 База [${HTML.bold(
+      ` ʟᴠʟ ${colony.level} `,
+    )}] ( 10 / ${colony.power()}⚡️)`,
     '',
     `🛠 Шахты [ ${10029} 💎]: `,
     '  - ʟᴠʟ 1 : 100 шт. = 100 / мин',
@@ -74,57 +88,40 @@ export async function colonyMenu(user: User) {
   const keyboard = InlineKeyboard.keyboard([
     [
       InlineKeyboard.textButton({
-        text: '📦 Собрать ресурсы',
-        payload: { action: Action.colony },
+        text: '📦 Собрать',
+        payload: { action: ActionType.colony },
+      }),
+      InlineKeyboard.textButton({
+        text: '🏭 Улучшить',
+        payload: { action: ActionType.colony },
       }),
     ],
     [
       InlineKeyboard.textButton({
-        text: '🛠 Купить [ 100 💸]',
-        payload: { action: Action.colony },
+        text: '🛠 Шахты',
+        payload: { action: ActionType.colony },
       }),
       InlineKeyboard.textButton({
-        text: '🛠 ʟᴠʟ ᴜᴘ [ 50 💸]',
-        payload: { action: Action.colony },
+        text: '🐷 Фермы',
+        payload: { action: ActionType.colony },
       }),
     ],
     [
       InlineKeyboard.textButton({
-        text: '🐷 Купить [ 100 💸]',
-        payload: { action: Action.colony },
-      }),
-      InlineKeyboard.textButton({
-        text: '🐷 ʟᴠʟ ᴜᴘ [ 50 💸]',
-        payload: { action: Action.colony },
+        text: '🔄 Обновить',
+        payload: { action: ActionType.fresh },
       }),
     ],
     [
       InlineKeyboard.textButton({
         text: '⬅️ Назад',
-        payload: { action: Action.back },
-      }),
-      InlineKeyboard.textButton({
-        text: '🔄 Обновить',
-        payload: { action: Action.fresh },
+        payload: { action: ActionType.back },
       }),
     ],
   ]);
-  const res = await TG.api.sendMessage({
-    text,
-    chat_id: user.chat,
-    reply_markup: keyboard,
-    parse_mode: 'HTML',
-  });
-  if (user.last) {
-    await TG.api
-      .deleteMessage({
-        chat_id: user.chat,
-        message_id: user.last,
-      })
-      .catch();
-  }
-  user.last = res.message_id;
-  user.action = Action.colony;
+
+  await drawMenu(colony, text, keyboard);
+  if (colony.action) colony.action.type = ActionType.colony;
 }
 
 // async function militaryMenu(user: User, session: SessionContext) {

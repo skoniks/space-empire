@@ -1,28 +1,23 @@
-import { CreationOptional } from 'sequelize';
+import { CreationOptional, NonAttribute } from 'sequelize';
 import {
   AutoIncrement,
   CreatedAt,
   DataType,
   Default,
   DeletedAt,
+  HasMany,
+  HasOne,
   PrimaryKey,
   Table,
   Unique,
   UpdatedAt,
 } from 'sequelize-typescript';
-import { Column, Entity, NullColumn } from '../database/db.types';
+import { Column, Entity } from '../database/db.types';
+import Action from './action.entity';
+import Factory from './factory.entity';
 
-export enum Action {
-  back,
-  fresh,
-  colony,
-  military,
-  trade,
-  help,
-}
-
-@Table({ tableName: 'users' })
-class User extends Entity<User> {
+@Table({ tableName: 'colonies' })
+class Colony extends Entity<Colony> {
   @PrimaryKey
   @AutoIncrement
   @Column({ type: DataType.INTEGER })
@@ -31,12 +26,6 @@ class User extends Entity<User> {
   @Unique
   @Column({ type: DataType.INTEGER })
   declare chat: number;
-
-  @NullColumn({ type: DataType.INTEGER })
-  declare last: CreationOptional<number | null>;
-
-  @NullColumn({ type: DataType.INTEGER })
-  declare action: CreationOptional<Action | null>;
 
   @Column({ type: DataType.STRING })
   declare name: string;
@@ -57,6 +46,12 @@ class User extends Entity<User> {
   @Column({ type: DataType.INTEGER })
   declare food: CreationOptional<number>;
 
+  @HasOne(() => Action)
+  declare action: NonAttribute<Action>;
+
+  @HasMany(() => Factory)
+  declare factories: NonAttribute<Factory[]>;
+
   @CreatedAt
   declare createdAt: CreationOptional<Date>;
 
@@ -65,6 +60,11 @@ class User extends Entity<User> {
 
   @DeletedAt
   declare deletedAt: CreationOptional<Date>;
+
+  power(): number {
+    const value = 100 * 1.5 ** (this.level - 1);
+    return value - (value % 5);
+  }
 }
 
-export default User;
+export default Colony;

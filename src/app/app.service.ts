@@ -1,34 +1,36 @@
 import { CallbackQueryContext, MessageContext } from 'puregram';
 import { Transaction } from 'sequelize';
 import DB from '../database/db.module';
-import User, { Action } from '../entities/user.entity';
+import { ActionType } from '../entities/action.entity';
+import Colony from '../entities/colony.entity';
 import { authorize } from './auth.service';
 import { colonyMenu, mainMenu } from './menu.service';
 
 async function handleAction(
-  user: User,
-  action: Action | null,
+  colony: Colony,
+  action: ActionType | null,
   transaction: Transaction,
 ) {
   switch (action) {
-    case Action.back:
-      await mainMenu(user);
+    case ActionType.back:
+      await mainMenu(colony);
       break;
-    case Action.fresh:
-      if (user.action) {
-        await handleAction(user, user.action, transaction);
-      } else await mainMenu(user);
+    case ActionType.fresh:
+      if (colony.action) {
+        await handleAction(colony, colony.action.type, transaction);
+      } else await mainMenu(colony);
       break;
-    case Action.colony:
-      await colonyMenu(user);
+    case ActionType.colony:
+      await colonyMenu(colony);
       break;
-    case Action.military:
+    case ActionType.military:
       break;
-    case Action.trade:
+    case ActionType.trade:
       break;
-    case Action.help:
+    case ActionType.help:
       break;
     default:
+      await mainMenu(colony);
       break;
   }
 }
@@ -36,22 +38,22 @@ async function handleAction(
 export function handleCallback(context: CallbackQueryContext) {
   return DB.transaction(async (transaction) => {
     if (!context.senderId) return;
-    const user = await authorize(context.senderId, transaction);
-    const { action = null } = <{ action: Action }>context.queryPayload;
-    await handleAction(user, action, transaction);
+    const colony = await authorize(context.senderId, transaction);
+    const { action = null } = <{ action: ActionType }>context.queryPayload;
+    await handleAction(colony, action, transaction);
+    await colony.action.save({ transaction });
+    await colony.save({ transaction });
     await context.answerCallbackQuery({});
-    await user.save({ transaction });
   });
 }
 
 export function handleMessage(context: MessageContext) {
   return DB.transaction(async (transaction) => {
     if (!context.senderId) return;
-    const user = await authorize(context.senderId, transaction);
-    if (user.action) {
-      await handleAction(user, user.action, transaction);
-    } else await mainMenu(user);
+    const colony = await authorize(context.senderId, transaction);
+    await handleAction(colony, null, transaction);
+    await colony.action.save({ transaction });
+    await colony.save({ transaction });
     await context.delete().catch();
-    await user.save({ transaction });
   });
 }

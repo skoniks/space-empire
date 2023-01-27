@@ -1,15 +1,21 @@
 import { HTML } from 'puregram';
 import { Transaction } from 'sequelize';
-import User from '../entities/user.entity';
+import Action from '../entities/action.entity';
+import Colony from '../entities/colony.entity';
+import Factory, { FactoryType } from '../entities/factory.entity';
 import TG from '../telegram/tg.module';
 
-export async function authorize(chat_id: number, transaction?: Transaction) {
-  let user = await User.findOne({
+export async function authorize(
+  chat_id: number,
+  transaction?: Transaction,
+): Promise<Colony> {
+  let colony = await Colony.findOne({
     where: { chat: chat_id },
+    include: [Action, Factory],
     transaction,
     lock: true,
   });
-  if (user) return user;
+  if (colony) return colony;
   const text =
     HTML.italic(
       'Третья мировая война заставила человечество покинуть родной дом' +
@@ -25,11 +31,42 @@ export async function authorize(chat_id: number, transaction?: Transaction) {
     chat_id,
     parse_mode: 'HTML',
   });
-  const res = await TG.prompt(chat_id);
-  if (message_id) await TG.api.deleteMessage({ chat_id, message_id }).catch();
-  if (res) await TG.api.deleteMessage({ chat_id, message_id: res.id }).catch();
-  const name = (res?.text || chat_id.toString(16)).substring(0, 10);
-  user = await User.create({ chat: chat_id, name }, { transaction });
-  return await user.reload({ transaction, lock: true });
-  // TODO: Calculate energy, initial buildings
+  try {
+    const { id, text: text2 } = await TG.prompt(chat_id);
+    await TG.api.deleteMessage({ chat_id, message_id: id }).catch();
+    const name = (text2 || chat_id.toString(16)).substring(0, 10);
+    colony = await Colony.create({ chat: chat_id, name }, { transaction });
+    await Action.create(
+      {
+        colonyId: colony.id,
+        message: message_id,
+      },
+      { transaction },
+    );
+    await Factory.bulkCreate(
+      [
+        {
+          colonyId: colony.id,
+          type: FactoryType.mine,
+          count: 1,
+          level: 1,
+        },
+        {
+          colonyId: colony.id,
+          type: FactoryType.farm,
+          count: 1,
+          level: 1,
+        },
+      ],
+      { transaction },
+    );
+    return await colony.reload({
+      include: [Action, Factory],
+      transaction,
+      lock: true,
+    });
+  } catch (error) {
+    await TG.api.deleteMessage({ chat_id, message_id }).catch();
+    return await authorize(chat_id, transaction);
+  }
 }
