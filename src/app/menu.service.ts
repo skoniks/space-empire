@@ -7,32 +7,50 @@ async function drawMenu(
   colony: Colony,
   text: string,
   keyboard: InlineKeyboard,
+  force = false,
 ) {
-  try {
-    await TG.api.editMessageText({
+  const edit = () =>
+    TG.api.editMessageText({
       text,
       chat_id: colony.chat,
       message_id: colony.action.message,
       reply_markup: keyboard,
       parse_mode: 'HTML',
     });
+  const send = () =>
+    TG.api.sendMessage({
+      text,
+      chat_id: colony.chat,
+      reply_markup: keyboard,
+      parse_mode: 'HTML',
+    });
+  try {
+    if (force) {
+      if (colony.action.message) {
+        await TG.api
+          .deleteMessage({
+            chat_id: colony.chat,
+            message_id: colony.action.message,
+          })
+          .catch();
+      }
+      const { message_id } = await send();
+      colony.action.message = message_id;
+    } else {
+      await edit();
+    }
   } catch (error) {
     if (
       error instanceof APIError &&
       error.message.includes('message to edit not found')
     ) {
-      const { message_id } = await TG.api.sendMessage({
-        text,
-        chat_id: colony.chat,
-        reply_markup: keyboard,
-        parse_mode: 'HTML',
-      });
+      const { message_id } = await send();
       colony.action.message = message_id;
     }
   }
 }
 
-export async function mainMenu(colony: Colony) {
+export async function mainMenu(colony: Colony, force = false) {
   const text = [
     `🚩 Колония: ${HTML.bold(colony.name)}`,
     '',
@@ -69,11 +87,13 @@ export async function mainMenu(colony: Colony) {
     ],
   ]);
 
-  await drawMenu(colony, text, keyboard);
+  await drawMenu(colony, text, keyboard, force);
   if (colony.action) colony.action.type = null;
 }
 
 export async function colonyMenu(colony: Colony) {
+  // const mines =
+
   const text = [
     `🏭 База [${HTML.bold(
       ` ʟᴠʟ ${colony.level} `,

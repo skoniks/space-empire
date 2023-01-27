@@ -37,26 +37,13 @@ export async function authorize(
     const name = (text2 || chat_id.toString(16)).substring(0, 10);
     colony = await Colony.create({ chat: chat_id, name }, { transaction });
     await Action.create(
-      {
-        colonyId: colony.id,
-        message: message_id,
-      },
+      { colonyId: colony.id, message: message_id },
       { transaction },
     );
     await Factory.bulkCreate(
       [
-        {
-          colonyId: colony.id,
-          type: FactoryType.mine,
-          count: 1,
-          level: 1,
-        },
-        {
-          colonyId: colony.id,
-          type: FactoryType.farm,
-          count: 1,
-          level: 1,
-        },
+        { colonyId: colony.id, type: FactoryType.mine, count: 1, level: 1 },
+        { colonyId: colony.id, type: FactoryType.farm, count: 1, level: 1 },
       ],
       { transaction },
     );

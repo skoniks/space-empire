@@ -16,7 +16,7 @@ async function handleAction(
       await mainMenu(colony);
       break;
     case ActionType.fresh:
-      if (colony.action) {
+      if (colony.action.type) {
         await handleAction(colony, colony.action.type, transaction);
       } else await mainMenu(colony);
       break;
@@ -30,7 +30,7 @@ async function handleAction(
     case ActionType.help:
       break;
     default:
-      await mainMenu(colony);
+      await mainMenu(colony, true);
       break;
   }
 }

@@ -6,7 +6,7 @@
     "clean": "rimraf dist",
     "build": "tsc --build --verbose",
     "start:dev": "npm run clean && npm run build && npm start",
-    "start:watch": "tsc-watch --onSuccess \"npm run start\"",
+    "start:watch": "npm run clean && tsc-watch --onSuccess \"npm run start\"",
     "test": "npm run build && node dist/test",
     "format": "prettier --write \"src/**/*.ts\"",
     "lint": "eslint \"src/**/*.ts\" --fix"
