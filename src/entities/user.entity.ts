@@ -10,7 +10,16 @@ import {
   Unique,
   UpdatedAt,
 } from 'sequelize-typescript';
-import { Column, Entity } from '../database/db.types';
+import { Column, Entity, NullColumn } from '../database/db.types';
+
+export enum Action {
+  back,
+  fresh,
+  colony,
+  military,
+  trade,
+  help,
+}
 
 @Table({ tableName: 'users' })
 class User extends Entity<User> {
@@ -23,11 +32,14 @@ class User extends Entity<User> {
   @Column({ type: DataType.INTEGER })
   declare chat: number;
 
+  @NullColumn({ type: DataType.INTEGER })
+  declare last: CreationOptional<number | null>;
+
+  @NullColumn({ type: DataType.INTEGER })
+  declare action: CreationOptional<Action | null>;
+
   @Column({ type: DataType.STRING })
   declare name: string;
-
-  // @NullColumn({})
-  // declare action: CreationOptional<>
 
   @Default(1)
   @Column({ type: DataType.INTEGER })
