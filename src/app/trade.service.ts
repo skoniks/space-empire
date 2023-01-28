@@ -33,12 +33,6 @@ export async function tradeMenu(colony: Colony) {
     ],
     [
       InlineKeyboard.textButton({
-        text: '🔄 Обновить',
-        payload: { action: ActionType.fresh },
-      }),
-    ],
-    [
-      InlineKeyboard.textButton({
         text: '⬅️ Назад',
         payload: { action: ActionType.back },
       }),

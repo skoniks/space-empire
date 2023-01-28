@@ -100,8 +100,7 @@ export function handleCallback(context: CallbackQueryContext) {
     const { action = null } = <{ action: ActionType }>context.queryPayload;
     const { text = '' } = await handleAction(colony, action, transaction);
     await colony.action.save({ transaction });
-    await colony.save({ transaction });
-    await context.answerCallbackQuery({ text });
+    await context.answerCallbackQuery({ text }).catch();
   });
 }
 
@@ -112,7 +111,6 @@ export function handleMessage(context: MessageContext) {
     const action = context.text == '/start' ? null : ActionType.menu;
     await handleAction(colony, action, transaction);
     await colony.action.save({ transaction });
-    await colony.save({ transaction });
     await context.delete().catch();
   });
 }

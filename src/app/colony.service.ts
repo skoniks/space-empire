@@ -15,34 +15,26 @@ export async function colonyMenu(colony: Colony) {
   let food = 0;
   let minesProfit = 0;
   let farmsProfit = 0;
-  const mines: Factory[] = [];
-  const farms: Factory[] = [];
   for (const i of colony.factories) {
     if (!i.count) continue;
     switch (i.type) {
       case FactoryType.mine:
         minesProfit += i.level * i.count;
         iron += i.count * i.profit();
-        mines.push(i);
         break;
       case FactoryType.farm:
         farmsProfit += i.level * i.count;
         food += i.count * i.profit();
-        farms.push(i);
         break;
     }
   }
-  mines.sort((a, b) => a.level - b.level);
-  farms.sort((a, b) => a.level - b.level);
   const lines = [
     `🏭 База [ <b>ʟᴠʟ ${colony.level}</b> ] ( ${power.left} / ${power.total}⚡️)`,
     `📦 Собрать: [ <b>${iron} 💎</b>], [ <b>${food} 🍖</b>]`,
+    `💹 Улучшение: <b>${colony.level * 100} 💸</b>`,
     '',
-    `🛠 Шахты → ${minesProfit} / мин:`,
-    ...mines.map((i) => format(i)),
-    '',
-    `🐷 Фермы → ${farmsProfit} / мин:`,
-    ...farms.map((i) => format(i)),
+    `🛠 Шахты → ${minesProfit} / мин`,
+    `🐷 Фермы → ${farmsProfit} / мин`,
   ];
   const keyboard = InlineKeyboard.keyboard([
     [
@@ -51,7 +43,7 @@ export async function colonyMenu(colony: Colony) {
         payload: { action: ActionType.profit },
       }),
       InlineKeyboard.textButton({
-        text: '🏭 Улучшить',
+        text: '💹 Улучшить',
         payload: { action: ActionType.upgrade },
       }),
     ],
@@ -96,6 +88,7 @@ export async function colonyProfit(colony: Colony, transaction: Transaction) {
     i.changed('updatedAt', true);
     await i.save({ transaction });
   }
+  await colony.save({ transaction });
   await colonyMenu(colony);
   return { text: 'Ресурсы собраны' };
 }
@@ -123,12 +116,10 @@ export async function colonFactoriesMeny(
     `${title} → ${totalProfit} / мин:`,
     ...factories.map((i) => format(i)),
     '',
-    `Ресурсы: <b>${colony.money} 💸, ${power.left} / ${power.total}⚡️</b>`,
-    '',
     '🛄 Покупка: <b>50 💸, 5⚡️</b>',
     `  - Доступно: ${purchase} шт.`,
     '',
-    '💹 Улучшение: <b>25 💸, 0⚡️</b>',
+    '💹 Улучшение: <b>25 💸</b>',
     `  - Доступно: ${upgrade} шт.`,
   ];
   const keyboard = InlineKeyboard.keyboard([
@@ -140,12 +131,6 @@ export async function colonFactoriesMeny(
       InlineKeyboard.textButton({
         text: '💹 Улучшить',
         payload: { action: ActionType.upgrade },
-      }),
-    ],
-    [
-      InlineKeyboard.textButton({
-        text: '🔄 Обновить',
-        payload: { action: ActionType.fresh },
       }),
     ],
     [
@@ -207,8 +192,15 @@ export async function colonyPurchase(colony: Colony, transaction: Transaction) {
 
 export async function colonyUpgrade(colony: Colony, transaction: Transaction) {
   if (colony.action.type == ActionType.colony) {
-    //
+    if (colony.money < colony.level * 100)
+      return { text: 'Недостаточно ресурсов' };
+    colony.money -= colony.level * 100;
+    colony.level += 1;
+    await colony.save({ transaction });
+    await colonyMenu(colony);
+    return { text: '🏭 База улучшена' };
   } else {
+    if (colony.money < 25) return { text: 'Недостаточно ресурсов' };
     const type =
       colony.action.type == ActionType.mines
         ? FactoryType.mine
