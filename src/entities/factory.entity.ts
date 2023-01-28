@@ -4,6 +4,7 @@ import {
   BelongsTo,
   CreatedAt,
   DataType,
+  Default,
   ForeignKey,
   PrimaryKey,
   Table,
@@ -27,9 +28,11 @@ class Factory extends Entity<Factory> {
   @Column({ type: DataType.INTEGER })
   declare type: FactoryType;
 
+  @Default(1)
   @Column({ type: DataType.INTEGER })
   declare level: number;
 
+  @Default(0)
   @Column({ type: DataType.INTEGER })
   declare count: number;
 

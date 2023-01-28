@@ -1,8 +1,9 @@
 import { InlineKeyboard } from 'puregram';
-import { Transaction } from 'sequelize';
-import { ActionType } from '../entities/action.entity';
+import { Op, Transaction } from 'sequelize';
+import Action, { ActionType } from '../entities/action.entity';
 import Colony from '../entities/colony.entity';
 import Factory, { FactoryType } from '../entities/factory.entity';
+import { handleAction } from './app.service';
 import { drawMenu } from './menu.service';
 
 const format = (i: Factory) =>
@@ -21,12 +22,12 @@ export async function colonyMenu(colony: Colony) {
     switch (i.type) {
       case FactoryType.mine:
         minesProfit += i.level * i.count;
-        iron += i.profit();
+        iron += i.count * i.profit();
         mines.push(i);
         break;
       case FactoryType.farm:
         farmsProfit += i.level * i.count;
-        food += i.profit();
+        food += i.count * i.profit();
         farms.push(i);
         break;
     }
@@ -83,41 +84,44 @@ export async function colonyMenu(colony: Colony) {
 
 export async function colonyProfit(colony: Colony, transaction: Transaction) {
   for (const i of colony.factories) {
-    if (!i.count) continue;
     switch (i.type) {
       case FactoryType.mine:
-        colony.iron += i.profit();
+        colony.iron += i.count * i.profit();
         break;
       case FactoryType.farm:
-        colony.food += i.profit();
+        colony.food += i.count * i.profit();
         break;
     }
     i.updatedAt = new Date();
     i.changed('updatedAt', true);
     await i.save({ transaction });
   }
-  await colony.save({ transaction });
   await colonyMenu(colony);
   return { text: 'Ресурсы собраны' };
 }
 
-export async function colonMinesMeny(colony: Colony) {
+export async function colonFactoriesMeny(
+  colony: Colony,
+  type: FactoryType,
+  action: ActionType,
+) {
   let totalProfit = 0;
   let totalUpgrade = 0;
-  const mines: Factory[] = [];
+  const factories: Factory[] = [];
   for (const i of colony.factories) {
-    if (!i.count || i.type != FactoryType.mine) continue;
+    if (!i.count || i.type != type) continue;
     if (i.level < colony.level) totalUpgrade += i.count;
     totalProfit += i.level * i.count;
-    mines.push(i);
+    factories.push(i);
   }
-  mines.sort((a, b) => a.level - b.level);
+  factories.sort((a, b) => a.level - b.level);
   const power = colony.power();
   const purchase = Math.floor(Math.min(power.left / 5, colony.money / 50));
   const upgrade = Math.floor(Math.min(totalUpgrade, colony.money / 25));
+  const title = type == FactoryType.mine ? '🛠 Шахты' : '🐷 Фермы';
   const lines = [
-    `🛠 Шахты → ${totalProfit} / мин:`,
-    ...mines.map((i) => format(i)),
+    `${title} → ${totalProfit} / мин:`,
+    ...factories.map((i) => format(i)),
     '',
     `Ресурсы: <b>${colony.money} 💸, ${power.left} / ${power.total}⚡️</b>`,
     '',
@@ -152,26 +156,112 @@ export async function colonMinesMeny(colony: Colony) {
     ],
   ]);
   await drawMenu(colony, lines.join('\n'), keyboard);
-  colony.action.type = ActionType.mines;
+  colony.action.type = action;
 }
 
-export async function colonFarmsMeny(colony: Colony) {
-  //
+export function colonMinesMeny(colony: Colony) {
+  return colonFactoriesMeny(colony, FactoryType.mine, ActionType.mines);
+}
+
+export function colonFarmsMeny(colony: Colony) {
+  return colonFactoriesMeny(colony, FactoryType.farm, ActionType.farms);
 }
 
 export async function colonyPurchase(colony: Colony, transaction: Transaction) {
+  const type =
+    colony.action.type == ActionType.mines
+      ? FactoryType.mine
+      : FactoryType.farm;
+  const title = type == FactoryType.mine ? '🛠 Шахта' : '🐷 Ферма';
   const power = colony.power();
-  const purchase = Math.floor(Math.min(power.left / 5, colony.money / 50));
-  if (purchase < 1) return { text: 'Недостаточно ресурсов' };
-  for (const i of colony.factories) {
-    if (i.type != FactoryType.mine) continue;
-    if (i.level != 1) continue;
-    colony.iron += i.profit();
-    i.count += 1;
-    i.updatedAt = new Date();
-    await i.save({ transaction });
+  if (power.left < 5 || colony.money < 50)
+    return { text: 'Недостаточно ресурсов' };
+  const factory = await Factory.findOne({
+    where: { type, level: 1, colonyId: colony.id },
+    transaction,
+    lock: true,
+  });
+  if (!factory) return { text: 'Нечего покупать' };
+  switch (factory.type) {
+    case FactoryType.mine:
+      colony.iron += factory.count * factory.profit();
+      break;
+    case FactoryType.farm:
+      colony.food += factory.count * factory.profit();
+      break;
   }
+  factory.count += 1;
+  factory.updatedAt = new Date();
+  factory.changed('updatedAt', true);
+  await factory.save({ transaction });
   colony.money -= 50;
-  await colonMinesMeny(colony);
-  return { text: 'Шахта куплена' };
+  await colony.save({ transaction });
+  await colony.reload({
+    include: [Action, Factory],
+    transaction,
+    lock: true,
+  });
+  await handleAction(colony, colony.action.type, transaction);
+  return { text: `${title} приобретена` };
+}
+
+export async function colonyUpgrade(colony: Colony, transaction: Transaction) {
+  if (colony.action.type == ActionType.colony) {
+    //
+  } else {
+    const type =
+      colony.action.type == ActionType.mines
+        ? FactoryType.mine
+        : FactoryType.farm;
+    const title = type == FactoryType.mine ? '🛠 Шахта' : '🐷 Ферма';
+    const factory1 = await Factory.findOne({
+      where: {
+        type,
+        count: { [Op.gte]: 1 },
+        level: { [Op.lt]: colony.level },
+        colonyId: colony.id,
+      },
+      transaction,
+      lock: true,
+    });
+    if (!factory1) return { text: 'Нечего улучшать' };
+    const [factory2] = await Factory.findOrCreate({
+      where: { type, level: factory1.level + 1, colonyId: colony.id },
+      transaction,
+      lock: true,
+    });
+    switch (factory1.type) {
+      case FactoryType.mine:
+        colony.iron += factory1.count * factory1.profit();
+        break;
+      case FactoryType.farm:
+        colony.food += factory1.count * factory1.profit();
+        break;
+    }
+    factory1.count -= 1;
+    factory1.updatedAt = new Date();
+    factory1.changed('updatedAt', true);
+    await factory1.save({ transaction });
+    switch (factory2.type) {
+      case FactoryType.mine:
+        colony.iron += factory2.count * factory2.profit();
+        break;
+      case FactoryType.farm:
+        colony.food += factory2.count * factory2.profit();
+        break;
+    }
+    factory2.count += 1;
+    factory2.updatedAt = new Date();
+    factory2.changed('updatedAt', true);
+    await factory2.save({ transaction });
+    colony.money -= 25;
+    await colony.save({ transaction });
+    await colony.reload({
+      include: [Action, Factory],
+      transaction,
+      lock: true,
+    });
+    await handleAction(colony, colony.action.type, transaction);
+    return { text: `${title} улучшена` };
+  }
 }

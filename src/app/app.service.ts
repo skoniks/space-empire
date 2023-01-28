@@ -10,10 +10,11 @@ import {
   colonyMenu,
   colonyProfit,
   colonyPurchase,
+  colonyUpgrade,
 } from './colony.service';
 import { mainMenu } from './main.service';
 
-async function handleAction(
+export async function handleAction(
   colony: Colony,
   action: ActionType | null,
   transaction: Transaction,
@@ -45,6 +46,15 @@ async function handleAction(
       result = await colonyProfit(colony, transaction);
       break;
     case ActionType.upgrade:
+      switch (colony.action.type) {
+        case ActionType.colony:
+        case ActionType.mines:
+        case ActionType.farms:
+          result = await colonyUpgrade(colony, transaction);
+          break;
+        default:
+          break;
+      }
       break;
     case ActionType.purchase:
       switch (colony.action.type) {
