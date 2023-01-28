@@ -38,7 +38,10 @@ export async function authorize(
     const { id, text } = await TG.prompt(chat_id);
     await TG.api.deleteMessage({ chat_id, message_id: id }).catch();
     const name = (text || chat_id.toString(16)).substring(0, 10);
-    colony = await Colony.create({ chat: chat_id, name }, { transaction });
+    colony = await Colony.create(
+      { chat: chat_id, name, money: 500 },
+      { transaction },
+    );
     await Action.create(
       { colonyId: colony.id, message: message_id },
       { transaction },

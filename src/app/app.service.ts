@@ -13,6 +13,7 @@ import {
   colonyUpgrade,
 } from './colony.service';
 import { mainMenu } from './main.service';
+import { tradeMenu, tradeProcess } from './trade.service';
 
 export async function handleAction(
   colony: Colony,
@@ -69,6 +70,12 @@ export async function handleAction(
     case ActionType.military:
       break;
     case ActionType.trade:
+      result = await tradeMenu(colony);
+      break;
+    case ActionType.money:
+    case ActionType.iron:
+    case ActionType.food:
+      result = await tradeProcess(colony, action);
       break;
     case ActionType.mines:
       result = await colonMinesMeny(colony);

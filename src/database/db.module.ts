@@ -12,7 +12,7 @@ const DB = new Sequelize({
   dialectOptions: { decimalNumbers: true },
   models: [resolve(__dirname, '..', 'entities')],
   benchmark: true,
-  // logging: false,
+  logging: false,
   // pool: {},
 });
 

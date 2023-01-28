@@ -116,8 +116,8 @@ export async function colonFactoriesMeny(
   }
   factories.sort((a, b) => a.level - b.level);
   const power = colony.power();
-  const purchase = Math.floor(Math.min(power.left / 5, colony.money / 50));
-  const upgrade = Math.floor(Math.min(totalUpgrade, colony.money / 25));
+  const purchase = Math.min(power.left / 5, colony.money / 50) | 0;
+  const upgrade = Math.min(totalUpgrade, colony.money / 25) | 0;
   const title = type == FactoryType.mine ? '🛠 Шахты' : '🐷 Фермы';
   const lines = [
     `${title} → ${totalProfit} / мин:`,
