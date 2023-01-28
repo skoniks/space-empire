@@ -13,12 +13,17 @@ import { Column, Entity, NullColumn } from '../database/db.types';
 import Colony from './colony.entity';
 
 export enum ActionType {
+  menu,
   back,
   fresh,
   colony,
   profit,
+  upgrade,
+  purchase,
   military,
   trade,
+  mines,
+  farms,
   help,
 }
 

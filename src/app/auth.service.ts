@@ -16,7 +16,8 @@ export async function authorize(
     lock: true,
   });
   if (colony) return colony;
-  const text =
+
+  const lines = [
     HTML.italic(
       'Третья мировая война заставила человечество покинуть родной дом' +
         ' и отправиться на поиски нового, бороздя просторы бескрайней вселенной.' +
@@ -25,16 +26,21 @@ export async function authorize(
         ' задача - привести колонию на борту к процветанию, наращивать производство' +
         ' и армию, защищать колонистов. Избрать путь, по которому вы будете вести людей' +
         ' в светлое будущее очень важно, но для начала давайте выберем название для колонии…',
-    ) + '\n\n[Напишите название вашей колонии]';
+    ),
+    '',
+    '',
+    '[📝 название вашей колонии]',
+  ];
+
   const { message_id } = await TG.api.sendMessage({
-    text,
+    text: lines.join('\n'),
     chat_id,
     parse_mode: 'HTML',
   });
   try {
-    const { id, text: text2 } = await TG.prompt(chat_id);
+    const { id, text } = await TG.prompt(chat_id);
     await TG.api.deleteMessage({ chat_id, message_id: id }).catch();
-    const name = (text2 || chat_id.toString(16)).substring(0, 10);
+    const name = (text || chat_id.toString(16)).substring(0, 10);
     colony = await Colony.create({ chat: chat_id, name }, { transaction });
     await Action.create(
       { colonyId: colony.id, message: message_id },

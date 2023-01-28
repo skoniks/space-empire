@@ -3,14 +3,14 @@ import { ActionType } from '../entities/action.entity';
 import Colony from '../entities/colony.entity';
 import { drawMenu } from './menu.service';
 
-export async function mainMenu(colony: Colony, force = false) {
-  const text = [
+export async function mainMenu(colony: Colony) {
+  const lines = [
     `🚩 Колония: ${HTML.bold(colony.name)}`,
     '',
     `💸 Кредиты: ${HTML.bold(`${colony.money}`)}`,
     `💎 Минералы: ${HTML.bold(`${colony.iron}`)}`,
     `🍖 Провизия: ${HTML.bold(`${colony.food}`)}`,
-  ].join('\n');
+  ];
   const keyboard = InlineKeyboard.keyboard([
     [
       InlineKeyboard.textButton({
@@ -40,6 +40,6 @@ export async function mainMenu(colony: Colony, force = false) {
     ],
   ]);
 
-  await drawMenu(colony, text, keyboard, force);
-  colony.action.type = null;
+  await drawMenu(colony, lines.join('\n'), keyboard);
+  colony.action.type = ActionType.menu;
 }

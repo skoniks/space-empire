@@ -6,7 +6,6 @@ export async function drawMenu(
   colony: Colony,
   text: string,
   keyboard: InlineKeyboard,
-  force = false,
 ) {
   const edit = () =>
     TG.api.editMessageText({
@@ -24,19 +23,11 @@ export async function drawMenu(
       parse_mode: 'HTML',
     });
   try {
-    if (force) {
-      if (colony.action.message) {
-        await TG.api
-          .deleteMessage({
-            chat_id: colony.chat,
-            message_id: colony.action.message,
-          })
-          .catch();
-      }
+    if (colony.action.message) {
+      await edit();
+    } else {
       const { message_id } = await send();
       colony.action.message = message_id;
-    } else {
-      await edit();
     }
   } catch (error) {
     if (

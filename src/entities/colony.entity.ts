@@ -57,9 +57,14 @@ class Colony extends Entity<Colony> {
   @UpdatedAt
   declare updatedAt: CreationOptional<Date>;
 
-  power(): number {
-    const value = 100 * 1.5 ** (this.level - 1);
-    return value - (value % 5);
+  power(): { total: number; left: number } {
+    let total = 100 * 1.5 ** (this.level - 1);
+    total = total - (total % 5);
+    let left = total;
+    for (const i of this.factories) {
+      left -= i.count * 5;
+    }
+    return { total, left };
   }
 }
 

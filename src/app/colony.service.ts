@@ -5,16 +5,19 @@ import Colony from '../entities/colony.entity';
 import Factory, { FactoryType } from '../entities/factory.entity';
 import { drawMenu } from './menu.service';
 
+const format = (i: Factory) =>
+  `  - ʟᴠʟ ${i.level} : ${i.count} шт. → ${i.level * i.count} / мин`;
+
 export async function colonyMenu(colony: Colony) {
   const power = colony.power();
-  let powerLeft = power;
   let iron = 0;
   let food = 0;
+  let minesProfit = 0;
+  let farmsProfit = 0;
   const mines: Factory[] = [];
   const farms: Factory[] = [];
   for (const i of colony.factories) {
     if (!i.count) continue;
-    powerLeft -= i.count * 5;
     switch (i.type) {
       case FactoryType.mine:
         iron += i.profit();
@@ -28,21 +31,18 @@ export async function colonyMenu(colony: Colony) {
   }
   mines.sort((a, b) => a.level - b.level);
   farms.sort((a, b) => a.level - b.level);
-
-  const format = (i: Factory) =>
-    `  - ʟᴠʟ ${i.level} : ${i.count} шт. → ${i.level * i.count} / мин`;
-
-  const text = [
-    `🏭 База [${HTML.bold(
-      ` ʟᴠʟ ${colony.level} `,
-    )}] ( ${powerLeft} / ${power}⚡️)`,
+  const lines = [
+    `🏭 База [${HTML.bold(` ʟᴠʟ ${colony.level} `)}] ( ${power.left} / ${
+      power.total
+    }⚡️)`,
+    `📦 Собрать: ${HTML.bold(`[ ${iron} 💎], [ ${food} 🍖]`)}`,
     '',
-    `🛠 Шахты [ ${iron} 💎]: `,
+    `🛠 Шахты : `,
     ...mines.map((i) => format(i)),
     '',
-    `🐷 Фермы [ ${food} 🍖]: `,
+    `🐷 Фермы : `,
     ...farms.map((i) => format(i)),
-  ].join('\n');
+  ];
   const keyboard = InlineKeyboard.keyboard([
     [
       InlineKeyboard.textButton({
@@ -51,17 +51,17 @@ export async function colonyMenu(colony: Colony) {
       }),
       InlineKeyboard.textButton({
         text: '🏭 Улучшить',
-        payload: { action: ActionType.colony },
+        payload: { action: ActionType.upgrade },
       }),
     ],
     [
       InlineKeyboard.textButton({
         text: '🛠 Шахты',
-        payload: { action: ActionType.colony },
+        payload: { action: ActionType.mines },
       }),
       InlineKeyboard.textButton({
         text: '🐷 Фермы',
-        payload: { action: ActionType.colony },
+        payload: { action: ActionType.farms },
       }),
     ],
     [
@@ -77,8 +77,7 @@ export async function colonyMenu(colony: Colony) {
       }),
     ],
   ]);
-
-  await drawMenu(colony, text, keyboard);
+  await drawMenu(colony, lines.join('\n'), keyboard);
   colony.action.type = ActionType.colony;
 }
 
@@ -99,4 +98,82 @@ export async function colonyProfit(colony: Colony, transaction: Transaction) {
   }
   await colony.save({ transaction });
   await colonyMenu(colony);
+  return { text: 'Ресурсы собраны' };
+}
+
+export async function colonMinesMeny(colony: Colony) {
+  let totalProfit = 0;
+  let totalUpgrade = 0;
+  const mines: Factory[] = [];
+  for (const i of colony.factories) {
+    if (!i.count || i.type != FactoryType.mine) continue;
+    if (i.level < colony.level) totalUpgrade += i.count;
+    totalProfit += i.level * i.count;
+    mines.push(i);
+  }
+  mines.sort((a, b) => a.level - b.level);
+  const power = colony.power();
+  const purchase = Math.floor(Math.min(power.left / 5, colony.money / 50));
+  const upgrade = Math.floor(Math.min(totalUpgrade, colony.money / 25));
+  const lines = [
+    `🛠 Шахты → ${totalProfit} / мин:`,
+    ...mines.map((i) => format(i)),
+    '',
+    `Ресурсы: ${HTML.bold(
+      `${colony.money} 💸, ${power.left} / ${power.total}⚡️`,
+    )}`,
+    '',
+    `🛄 Покупка: ${HTML.bold('50 💸, 5⚡️')}`,
+    `  - Доступно: ${purchase} шт.`,
+    '',
+    `💹 Улучшение: ${HTML.bold('25 💸, 0⚡️')}`,
+    `  - Доступно: ${upgrade} шт.`,
+  ];
+  const keyboard = InlineKeyboard.keyboard([
+    [
+      InlineKeyboard.textButton({
+        text: '🛄 Купить',
+        payload: { action: ActionType.purchase },
+      }),
+      InlineKeyboard.textButton({
+        text: '💹 Улучшить',
+        payload: { action: ActionType.upgrade },
+      }),
+    ],
+    [
+      InlineKeyboard.textButton({
+        text: '🔄 Обновить',
+        payload: { action: ActionType.fresh },
+      }),
+    ],
+    [
+      InlineKeyboard.textButton({
+        text: '⬅️ Назад',
+        payload: { action: ActionType.back },
+      }),
+    ],
+  ]);
+  await drawMenu(colony, lines.join('\n'), keyboard);
+  colony.action.type = ActionType.mines;
+}
+
+export async function colonFarmsMeny(colony: Colony) {
+  //
+}
+
+export async function colonyPurchase(colony: Colony, transaction: Transaction) {
+  const power = colony.power();
+  const purchase = Math.floor(Math.min(power.left / 5, colony.money / 50));
+  if (purchase < 1) return { text: 'Недостаточно ресурсов' };
+  for (const i of colony.factories) {
+    if (i.type != FactoryType.mine) continue;
+    if (i.level != 1) continue;
+    colony.iron += i.profit();
+    i.count += 1;
+    i.updatedAt = new Date();
+    await i.save({ transaction });
+  }
+  colony.money -= 50;
+  await colonMinesMeny(colony);
+  return { text: 'Шахта куплена' };
 }

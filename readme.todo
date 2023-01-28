@@ -1,7 +1,7 @@
 Core:
-  [] DB connection
-  [] DB entities
-  [] TG longpoll
+  [x] DB connection @done(23-01-27 15:01)
+  [x] DB entities @done(23-01-27 15:01)
+  [x] TG longpoll @done(23-01-27 15:01)
 
 Game:
   Ресурсы:
