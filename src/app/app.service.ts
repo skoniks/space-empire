@@ -92,7 +92,8 @@ export function handleMessage(context: MessageContext) {
   return DB.transaction(async (transaction) => {
     if (!context.senderId) return;
     const colony = await authorize(context.senderId, transaction);
-    await handleAction(colony, null, transaction);
+    const action = context.text == '/start' ? null : ActionType.menu;
+    await handleAction(colony, action, transaction);
     await colony.action.save({ transaction });
     await colony.save({ transaction });
     await context.delete().catch();

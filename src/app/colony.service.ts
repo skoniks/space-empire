@@ -1,4 +1,4 @@
-import { HTML, InlineKeyboard } from 'puregram';
+import { InlineKeyboard } from 'puregram';
 import { Transaction } from 'sequelize';
 import { ActionType } from '../entities/action.entity';
 import Colony from '../entities/colony.entity';
@@ -20,10 +20,12 @@ export async function colonyMenu(colony: Colony) {
     if (!i.count) continue;
     switch (i.type) {
       case FactoryType.mine:
+        minesProfit += i.level * i.count;
         iron += i.profit();
         mines.push(i);
         break;
       case FactoryType.farm:
+        farmsProfit += i.level * i.count;
         food += i.profit();
         farms.push(i);
         break;
@@ -32,15 +34,13 @@ export async function colonyMenu(colony: Colony) {
   mines.sort((a, b) => a.level - b.level);
   farms.sort((a, b) => a.level - b.level);
   const lines = [
-    `🏭 База [${HTML.bold(` ʟᴠʟ ${colony.level} `)}] ( ${power.left} / ${
-      power.total
-    }⚡️)`,
-    `📦 Собрать: ${HTML.bold(`[ ${iron} 💎], [ ${food} 🍖]`)}`,
+    `🏭 База [ <b>ʟᴠʟ ${colony.level}</b> ] ( ${power.left} / ${power.total}⚡️)`,
+    `📦 Собрать: [ <b>${iron} 💎</b>], [ <b>${food} 🍖</b>]`,
     '',
-    `🛠 Шахты : `,
+    `🛠 Шахты → ${minesProfit} / мин:`,
     ...mines.map((i) => format(i)),
     '',
-    `🐷 Фермы : `,
+    `🐷 Фермы → ${farmsProfit} / мин:`,
     ...farms.map((i) => format(i)),
   ];
   const keyboard = InlineKeyboard.keyboard([
@@ -119,14 +119,12 @@ export async function colonMinesMeny(colony: Colony) {
     `🛠 Шахты → ${totalProfit} / мин:`,
     ...mines.map((i) => format(i)),
     '',
-    `Ресурсы: ${HTML.bold(
-      `${colony.money} 💸, ${power.left} / ${power.total}⚡️`,
-    )}`,
+    `Ресурсы: <b>${colony.money} 💸, ${power.left} / ${power.total}⚡️</b>`,
     '',
-    `🛄 Покупка: ${HTML.bold('50 💸, 5⚡️')}`,
+    '🛄 Покупка: <b>50 💸, 5⚡️</b>',
     `  - Доступно: ${purchase} шт.`,
     '',
-    `💹 Улучшение: ${HTML.bold('25 💸, 0⚡️')}`,
+    '💹 Улучшение: <b>25 💸, 0⚡️</b>',
     `  - Доступно: ${upgrade} шт.`,
   ];
   const keyboard = InlineKeyboard.keyboard([

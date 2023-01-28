@@ -1,15 +1,15 @@
-import { HTML, InlineKeyboard } from 'puregram';
+import { InlineKeyboard } from 'puregram';
 import { ActionType } from '../entities/action.entity';
 import Colony from '../entities/colony.entity';
 import { drawMenu } from './menu.service';
 
 export async function mainMenu(colony: Colony) {
   const lines = [
-    `🚩 Колония: ${HTML.bold(colony.name)}`,
+    `🚩 Колония: <b>${colony.name}</b>`,
     '',
-    `💸 Кредиты: ${HTML.bold(`${colony.money}`)}`,
-    `💎 Минералы: ${HTML.bold(`${colony.iron}`)}`,
-    `🍖 Провизия: ${HTML.bold(`${colony.food}`)}`,
+    `💸 Кредиты: <b>${colony.money}</b>`,
+    `💎 Минералы: <b>${colony.iron}</b>`,
+    `🍖 Провизия: <b>${colony.food}</b>`,
   ];
   const keyboard = InlineKeyboard.keyboard([
     [
